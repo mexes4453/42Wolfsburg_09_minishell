@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ft_parser_get_max_args.c                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cudoh <cudoh@student.42wolfsburg.de>       +#+  +:+       +#+        */
+/*   By: ykruhlyk <ykruhlyk@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/01 06:33:47 by cudoh             #+#    #+#             */
-/*   Updated: 2022/10/21 11:54:24 by cudoh            ###   ########.fr       */
+/*   Updated: 2022/12/06 10:29:02 by ykruhlyk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
  * @param v_p 
  * @return int 
  */
-int ft_parser_get_max_args(t_parser_var *v_p)
+int	ft_parser_get_max_args(t_parser_var *v_p)
 {
 	char	*chr_p;
 	int		flag;
@@ -44,10 +44,9 @@ int ft_parser_get_max_args(t_parser_var *v_p)
 			flag = 0;
 		}
 		else if (ft_strchr(P_WHITESPACE, (int)*chr_p))
-			flag = 1;			
+			flag = 1;
 		chr_p++;
 	}
 	v_p->max_args = cnt_args;
-//	v_p->max_args = 10;
 	return (0);
 }

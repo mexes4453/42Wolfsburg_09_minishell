@@ -6,64 +6,75 @@
 /*   By: cudoh <cudoh@student.42wolfsburg.de>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/08 21:33:08 by cudoh             #+#    #+#             */
-/*   Updated: 2022/11/08 21:41:06 by cudoh            ###   ########.fr       */
+/*   Updated: 2022/12/18 11:51:38 by cudoh            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-static void	ft_preserve_arg(char **argv_n, char **txt_s, char *s)
+static void	ft_handle_quote(char **argv, char **s, char **q, \
+							t_parser_var *v_p)
 {
-	int		len_str;
-	char	*txt;
-	char 	*tmp_argv_n;
-
-	len_str = s - *txt_s;
-	if (len_str == 0)
-		return;
-	txt = ft_calloc((len_str + 1), sizeof(char));
-	ft_memcpy(txt, *txt_s, len_str);
-	if (*argv_n == NULL)
+	if (v_p->flag_quote == 1 && (*(*s)) == **q)
 	{
-		*argv_n = txt;
+		v_p->flag_quote = 0;
+		v_p->str_s = (*(s)) + 1;
+		ft_ms_append_str_to_str(argv, &(v_p->tk_s), s);
 	}
-	else
+	else if (v_p->flag_quote == 0 && (**s == 39 || **s == 34))
 	{
-		tmp_argv_n = *argv_n;
-		*argv_n = ft_strjoin(tmp_argv_n, txt);
-		free(tmp_argv_n);
-		free(txt);
+		**q = **s;
+		v_p->flag_quote = 1;
+		if (*s > v_p->str_s)
+			ft_ms_append_str_to_str(argv, &(v_p->str_s), s);
+		v_p->tk_s = (*(s)) + 1;
 	}
-	
 }
 
-static void ft_append_txt_to_arg(char **str, char **txt_s, char **txt_e)
+static void	ft_preserve_argv(char **argv, char **s, char **q, \
+										t_parser_var *v_p)
 {
-	size_t	len_str;
-	char	*txt;
-	char	*str_tmp;
-	
-	len_str = *txt_e - *txt_s;
-	if (len_str == 1)
-		return ;
-	txt = ft_calloc((len_str + 1), sizeof(char));
-	ft_memcpy(txt, *txt_s, len_str);
-	if (*str == NULL)
+	if ((v_p->flag_quote == 0) && (*s > v_p->str_s))
 	{
-		*str = txt;
+		ft_ms_append_str_to_str(argv, &(v_p->str_s), s);
+		v_p->str_s = *s;
+	}
+	else if (v_p->flag_quote == 1 && **q == 34 && *s > (v_p->tk_s))
+	{
+		ft_ms_append_str_to_str(argv, &(v_p->tk_s), s);
+		v_p->tk_s = *s;
+	}
+}
+
+static void	ft_handle_dollar_n_dquote(char **argv, char **s, \
+										t_parser_var *v_p)
+{
+	char	*tmp_str;
+
+	tmp_str = NULL;
+	v_p->rc = 0;
+	if (*(*s + 1) == '?')
+		ft_ms_handle_status(argv, s, v_p);
+	else if (*(*s + 1) == '$')
+	{
+		tmp_str = *argv;
+		if (tmp_str == 0 || tmp_str == NULL)
+			*argv = ft_strjoin("", "$$");
+		else
+			*argv = ft_strjoin(tmp_str, "$$");
+		free(tmp_str);
+		tmp_str = NULL;
+		v_p->tk_s = (*s) + 2;
+		v_p->str_s = (*s) + 2;
+		*s = *s + 1;
 	}
 	else
-	{
-		str_tmp = *str;
-		*str = ft_strjoin(str_tmp, txt);
-		free(str_tmp);
-		free(txt);
-	}
+		ft_ms_handle_env_var(argv, s, v_p);
 }
 
 /**
  * @brief 		This function checks to see if the quote with the usr command
- * 				is even numbered ('->34, "->39).
+ * 				is even numbered ("->34, '->39).
  * 				The quote char is updated as the string chars are examined
  * 				while transversing the string.
  *
@@ -71,68 +82,46 @@ static void ft_append_txt_to_arg(char **str, char **txt_s, char **txt_e)
  * @param flag
  * @param quote
  */
-static void ft_handle_dollar_n_quote(char **argv, int *flag, char *q, int *f_d)
+static void	ft_handle_dollar_n_quote(char **argv, char *q, t_parser_var *v_p)
 {
-	char 	*s;
-	char	*str_s;
-	char 	*str_e;
-	char	*txt_s;
-	char	*txt_e;
+	char	*s;
 	char	*argv_n;
 
 	s = *argv;
-	str_s = *argv;
-	str_e = s + ft_strlen(s);
+	v_p->str_s = *argv;
+	v_p->str_e = s + ft_strlen(s);
 	argv_n = NULL;
-	while (s < str_e)
+	while (s < v_p->str_e)
 	{
-		if (*s == '$' && *flag == 0)
+		ft_handle_quote(&argv_n, &s, &q, v_p);
+		if (*s == '$')
 		{
-			// Do something to recreate the string here.
-		}
-		else if (*flag == 1 && *s == *q)
-		{
-			*flag = 0;
-			txt_e = s;
-			str_s = s + 1;
-			ft_append_txt_to_arg(&argv_n, &txt_s, &txt_e);
-			if (*f_d)
-				ft_printf("quote_state: %d\n", *flag);
-		}
-		else if (*flag == 0 && (*s == 39 || *s == 34))
-		{
-			*q = *s;
-			*flag = 1;
-			ft_preserve_arg(&argv_n, &str_s, s);
-			txt_s = s + 1;
-			if (*f_d)
-				ft_printf("quote_state: %d\n", *flag);
+			ft_preserve_argv(&argv_n, &s, &q, v_p);
+			if ((v_p->flag_quote == 0) || (v_p->flag_quote == 1 && *q == 34))
+				ft_handle_dollar_n_dquote(&argv_n, &s, v_p);
 		}
 		s++;
 	}
+	if (*(v_p->str_s) != '\0')
+		ft_ms_append_str_to_str(&argv_n, &(v_p->str_s), &(v_p->str_e));
 	if (argv_n != NULL)
+	{
 		*argv = argv_n;
+		ft_lstadd_back(&(v_p->exec_dyn_lst), ft_lstnew((void *)argv_n));
+	}
 }
 
-
-
-
-void ft_ms_handle_quotes_n_dollar(char **argv_s)
+void	ft_ms_handle_quotes_n_dollar(char **argv_s, t_parser_var *v_p)
 {
-    int		idx;
-	int		flag;
+	int		idx;
 	char	quote;
-	int		flag_debug;
-	
+
 	idx = 0;
-	flag = 0;
+	v_p->flag_quote = 0;
 	quote = 0;
-	flag_debug = 1;
-	while (argv_s[idx] != 0)
+	while (argv_s[idx] != 0 && (ft_strlen(argv_s[idx]) > 0))
 	{
-		ft_handle_dollar_n_quote(&argv_s[idx], &flag, &quote, &flag_debug);
+		ft_handle_dollar_n_quote(&argv_s[idx], &quote, v_p);
 		idx++;
 	}
-    
 }
-

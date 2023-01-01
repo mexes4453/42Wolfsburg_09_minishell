@@ -6,7 +6,7 @@
 /*   By: cudoh <cudoh@student.42wolfsburg.de>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/02 13:07:02 by cudoh             #+#    #+#             */
-/*   Updated: 2022/10/15 11:11:57 by cudoh            ###   ########.fr       */
+/*   Updated: 2022/12/18 13:17:12 by cudoh            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,13 +26,23 @@ t_cmd	*ft_parser_parse_pipe(char **str_s, char *str_e, t_parser_var *v)
 {
 	t_cmd	*cmd;
 
-    if (v->flag_debug) ft_printf("\n\n-->parse_exec_s\n");
 	cmd = ft_parser_parse_exec(str_s, str_e, v);
-    if (v->flag_debug) ft_printf("\n-->parse_exec_e\n");
+	if (*cmd == P_ERROR)
+		return (cmd);
 	if (ft_parser_peek(str_s, str_e, "|"))
 	{
+		if ((((t_cmd_exec *)cmd)->argv_s)[0] == 0)
+		{
+			ft_printf("Error! syntax error\n");
+			v->status = STATUS_ERROR_SYNTAX;
+			ft_free_parser_tree(cmd);
+			cmd = (t_cmd *)ft_calloc(1, sizeof(t_cmd));
+			*cmd = P_ERROR;
+			return (cmd);
+		}
 		ft_parser_get_token(str_s, str_e, 0, 0);
-		cmd = ft_parser_init_cmd_pipe(cmd, ft_parser_parse_pipe(str_s, str_e, v));
+		cmd = ft_parser_init_cmd_pipe(cmd, \
+									ft_parser_parse_pipe(str_s, str_e, v));
 	}
 	return (cmd);
 }

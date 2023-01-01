@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ft_parser_get_token.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cudoh <cudoh@student.42wolfsburg.de>       +#+  +:+       +#+        */
+/*   By: ykruhlyk <ykruhlyk@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/02 08:15:10 by cudoh             #+#    #+#             */
-/*   Updated: 2022/11/01 18:17:23 by cudoh            ###   ########.fr       */
+/*   Updated: 2022/12/06 10:32:38 by ykruhlyk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,12 @@
 static void	ft_on_redir(char **s, int *rc)
 {
 	(*s)++;
-	if (**s == '>')
+	if (**s == '>' && *((*s) - 1) == '>')
 	{
 		*rc = '+';
 		(*s)++;
 	}
-	else if (**s == '<')
+	else if (**s == '<' && *((*s) - 1) == '<')
 	{
 		*rc = '-';
 		(*s)++;
@@ -40,32 +40,26 @@ static void	ft_on_redir(char **s, int *rc)
  * @param s 
  * @param str_e 
  */
-static void ft_on_quotes(char **s, char *str_e)
+static void	ft_on_quotes(char **s, char *str_e)
 {
-    char    quote;
-    int     flag;
-	int		flag_debug;
+	char	quote;
+	int		flag;
 
-    quote = **s;
-    flag = 0;
-	flag_debug = 0;
-    while(*s < str_e)
-    {
+	quote = **s;
+	flag = 0;
+	while (*s < str_e)
+	{
 		if (flag == 1 && **s == quote)
-		{
 			flag ^= 1;
-			if (flag_debug) ft_printf("quote_state: %d\n", flag);
-		}
 		else if (flag == 0 && (**s == 39 || **s == 34))
 		{
 			quote = **s;
 			flag ^= 1;
-			if (flag_debug) ft_printf("quote_state: %d\n", flag);
 		}
 		if (flag == 0 && ft_strchr(P_WHITESPACE, **s))
-			break;
-    	(*s)++;
-    }
+			break ;
+		(*s)++;
+	}
 }
 
 /**
@@ -78,30 +72,26 @@ static void ft_on_quotes(char **s, char *str_e)
  * @param str_e
  * @param rc
  */
-static void ft_match_char(char **s, char *str_e, int *rc)
+static void	ft_match_char(char **s, char *str_e, int *rc)
 {
-    ft_printf("The char: %c\n", **s);
-    if (**s == 0)
-        return;
-    else if (**s == '|')
-        (*s)++;
-    else if (**s == '<' || **s == '>')
-        ft_on_redir(s, rc);
-    else
-    {
-        *rc = 'a';
-        while (*s < str_e && !ft_strchr(P_WHITESPACE, **s) &&
-               !ft_strchr(P_SYMBOLS, **s))
-        {
+	if (**s == 0)
+		return ;
+	else if (**s == '|')
+		(*s)++;
+	else if (**s == '<' || **s == '>')
+		ft_on_redir(s, rc);
+	else
+	{
+		*rc = 'a';
+		while (*s < str_e && !ft_strchr(P_WHITESPACE, **s) && \
+				!ft_strchr(P_SYMBOLS, **s))
+		{
 			if (**s == 39 || **s == 34)
-			{
 				ft_on_quotes(s, str_e);
-			}
 			else
-            	(*s)++;
-			
-        }
-    }
+			(*s)++;
+		}
+	}
 }
 
 /**
@@ -136,7 +126,7 @@ int	ft_parser_get_token(char **str_s, char *str_e, char **tk_s, char **tk_e)
 
 	s = *str_s;
 	while (s < str_e && ft_strchr(P_WHITESPACE, *s))
-	    s++;
+		s++;
 	if (tk_s != NULL)
 		*tk_s = s;
 	rc = *s;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ft_ms_cmd_list.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cudoh <cudoh@student.42wolfsburg.de>       +#+  +:+       +#+        */
+/*   By: ykruhlyk <ykruhlyk@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/04 21:56:51 by cudoh             #+#    #+#             */
-/*   Updated: 2022/10/15 08:45:57 by cudoh            ###   ########.fr       */
+/*   Updated: 2022/12/06 09:21:08 by ykruhlyk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,9 @@
  * 			the ft_parser_parse function.
  * @param cmd 
  */
-void    ft_ms_cmd_list(t_cmd *cmd, t_parser_var *v)
+void	ft_ms_cmd_list(t_cmd *cmd, t_parser_var *v)
 {
-    t_cmd_list  *cmd_list;
+	t_cmd_list	*cmd_list;
 
 	cmd_list = (t_cmd_list *)cmd;
 	if (fork() == 0)

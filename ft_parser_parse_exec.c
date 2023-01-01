@@ -6,7 +6,7 @@
 /*   By: cudoh <cudoh@student.42wolfsburg.de>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/02 15:03:19 by cudoh             #+#    #+#             */
-/*   Updated: 2022/10/30 20:21:05 by cudoh            ###   ########.fr       */
+/*   Updated: 2022/12/11 10:11:24 by cudoh            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,15 @@
  * 
  * @param tk 
  */
-static void ft_is_arg_or_cmd(int tk)
+static int	ft_is_arg_or_cmd(int tk, t_parser_var *v)
 {
 	if (tk != 'a')
 	{
-		write(2, "Error!\nsyntax", 13);
-		exit(1);
+		ft_printf("Error! syntax error\n");
+		v->status = STATUS_ERROR_SYNTAX;
+		return (-1);
 	}
+	return (0);
 }
 
 /**
@@ -32,14 +34,39 @@ static void ft_is_arg_or_cmd(int tk)
  * @param argc 
  * @param v 
  */
-static void	ft_chk_args_limit(int argc, t_parser_var *v)
+static int	ft_chk_args_limit(int argc, t_parser_var *v)
 {
 	if ((argc) > v->max_args)
 	{
-		write(2, "Error!\nArgs limit exceeded\n", 27);
-        ft_printf("MAX_ARGS: %d", v->max_args);
-		exit(1);
+		ft_printf("Error!\nArgs limit exceeded\n");
+		v->status = STATUS_ERROR_SYNTAX;
+		return (-1);
 	}
+	return (0);
+}
+
+static int	ft_upd_exec_cmd_argv(t_cmd *ret, t_cmd_exec *cmd, \
+								t_parser_var *v, int *argc)
+{
+	int	status;
+
+	status = 0;
+	status = ft_is_arg_or_cmd(v->tok, v);
+	if (status == 0)
+	{
+		cmd->argv_s[*argc] = v->tk_s;
+		cmd->argv_e[*argc] = v->tk_e;
+		(*argc)++;
+		status = ft_chk_args_limit(*argc, v);
+	}
+	if (status < 0)
+	{
+		ft_free_parser_tree(ret);
+		ret = (t_cmd *)ft_calloc(1, sizeof(t_cmd));
+		*ret = P_ERROR;
+		return (-1);
+	}
+	return (0);
 }
 
 /**
@@ -51,35 +78,28 @@ static void	ft_chk_args_limit(int argc, t_parser_var *v)
  * @param v 
  * @return t_cmd* 
  */
-t_cmd   *ft_parser_parse_exec(char **str_s, char *str_e, t_parser_var *v)
+t_cmd	*ft_parser_parse_exec(char **str_s, char *str_e, t_parser_var *v)
 {
 	t_cmd		*ret;
-    t_cmd_exec	*cmd;
+	t_cmd_exec	*cmd;
 	int			argc;
-    char        *tk_s;
-    char        *tk_e;
 
 	ret = ft_parser_init_cmd_exec(v);
 	cmd = (t_cmd_exec *)ret;
 	argc = 0;
-    
 	ret = ft_parser_parse_redir(ret, str_s, str_e, v);
-	while (!ft_parser_peek(str_s, str_e, "|&;()"))
+	if (*ret == P_ERROR)
+		return (ret);
+	while (!ft_parser_peek(str_s, str_e, "|"))
 	{
-		//v->tok = ft_parser_get_token(str_s, str_e, &(v->tk_s), &(v->tk_e));
-		v->tok = ft_parser_get_token(str_s, str_e, &tk_s, &tk_e);
+		v->tok = ft_parser_get_token(str_s, str_e, &(v->tk_s), &(v->tk_e));
 		if (v->tok == 0)
-			break;
-		ft_is_arg_or_cmd(v->tok);
-      if (v->flag_debug)   ft_printf("\nFT_PARSE_EXEC_%d. TOKEN->%c, CHAR-> %c", argc, v->tok, **str_s);
-		cmd->argv_s[argc] = tk_s;
-		cmd->argv_e[argc] = tk_e;
-      if (v->flag_debug)   ft_printf("\nFT_PARSE_EXEC-> tk_s(%p), tk_e(%p)", tk_s, tk_e);
-
-		argc++;
-    if (v->flag_debug) ft_printf ("\nFT_PARSE_EXEC-> ARGC_(%d); ARGC_MAX_(%d) \n", argc, v->max_args);
-		ft_chk_args_limit(argc, v);
+			break ;
+		if (ft_upd_exec_cmd_argv(ret, cmd, v, &argc) < 0)
+			return (ret);
 		ret = ft_parser_parse_redir(ret, str_s, str_e, v);
+		if (*ret == P_ERROR)
+			return (ret);
 	}
 	cmd->argv_s[argc] = 0;
 	cmd->argv_e[argc] = 0;

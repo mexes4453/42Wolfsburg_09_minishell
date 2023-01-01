@@ -6,7 +6,7 @@
 /*   By: cudoh <cudoh@student.42wolfsburg.de>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/01 18:41:23 by cudoh             #+#    #+#             */
-/*   Updated: 2022/11/08 12:59:17 by cudoh            ###   ########.fr       */
+/*   Updated: 2022/12/17 16:23:30 by cudoh            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,6 @@ static void	ft_is_quote_complete(char *usr_inp, int *flag, char *quote)
 {
 	char	*s;
 	char	*str_e;
-	int		flag_debug = 0;
 
 	*quote = 0;
 	*flag = 0;
@@ -35,17 +34,11 @@ static void	ft_is_quote_complete(char *usr_inp, int *flag, char *quote)
 	while (s < str_e)
 	{
 		if (*flag == 1 && *s == *quote)
-		{
 			*flag ^= 1;
-			if (flag_debug)
-				ft_printf("quote_state: %d\n", *flag);
-		}
 		else if (*flag == 0 && (*s == 39 || *s == 34))
 		{
 			*quote = *s;
 			*flag ^= 1;
-			if (flag_debug)
-				ft_printf("quote_state: %d\n", *flag);
 		}
 		s++;
 	}
@@ -69,7 +62,7 @@ static void	ft_is_quote_complete(char *usr_inp, int *flag, char *quote)
  * @param r_inp 
  * @return int 
  */
-static int ft_recurs_roll_inp(char **usr_inp, char **usr_inp_t, char **r_inp)
+static int	ft_recurs_roll_inp(char **usr_inp, char **usr_inp_t, char **r_inp)
 {
 	free(*usr_inp);
 	*usr_inp = NULL;
@@ -91,7 +84,7 @@ static int ft_recurs_roll_inp(char **usr_inp, char **usr_inp_t, char **r_inp)
 		*usr_inp = ft_strjoin(*usr_inp_t, "\n");
 		free(*usr_inp_t);
 		*usr_inp_t = NULL;
-		*usr_inp_t =ft_strdup(*usr_inp);
+		*usr_inp_t = ft_strdup(*usr_inp);
 		return (0);
 	}
 	return (0);
@@ -115,32 +108,40 @@ static int ft_recurs_roll_inp(char **usr_inp, char **usr_inp_t, char **r_inp)
  * @param usr_inp 
  * @return int 
  */
-static int ft_recurs_cmd_inp(char **usr_inp)
+static int	ft_recurs_cmd_inp(char **usr_inp)
 {
-	char 	*recurs_inp;
+	char	*recurs_inp;
 	char	*usr_inp_tmp;
-	int		flag_debug;
 	int		status;
 
-	flag_debug = 0;
 	status = 0;
 	recurs_inp = NULL;
-	usr_inp_tmp = ft_strdup(*usr_inp);
+	usr_inp_tmp = ft_strjoin(*usr_inp, "\n");
 	while (recurs_inp == NULL)
 	{
-			rl_replace_line("", 0);
-			rl_on_new_line();
-			recurs_inp = readline("> ");
-		if (flag_debug && recurs_inp != NULL)
-		{
-			ft_printf("recurs_txt: |%s| - cnt: %d", recurs_inp,
-					  ft_strlen(recurs_inp));
-		}
+		rl_replace_line("", 0);
+		rl_on_new_line();
+		recurs_inp = readline("> ");
 		status = ft_recurs_roll_inp(usr_inp, &usr_inp_tmp, &recurs_inp);
 		if (status > 0 || status < 0)
-			break;
+			break ;
 	}
 	return (status);
+}
+
+int	ft_handle_usr_inp_end(char *usr_inp)
+{
+	size_t	i;
+
+	i = 0;
+	if (usr_inp == NULL || *usr_inp == '\0')
+		return (0);
+	i = ft_strlen(usr_inp) - 1;
+	while (i > 0 && ft_strchr(P_WHITESPACE, usr_inp[i]))
+		i--;
+	if (usr_inp[i] == '|')
+		return (-1);
+	return (0);
 }
 
 /**
@@ -151,6 +152,7 @@ static int ft_recurs_cmd_inp(char **usr_inp)
  * 
  * @param usr_inp 
  */
+
 int	ft_ms_chk_quote(char **usr_inp)
 {
 	int		flag;
@@ -162,7 +164,7 @@ int	ft_ms_chk_quote(char **usr_inp)
 	flag_debug = 0;
 	status = 0;
 	ft_is_quote_complete(*usr_inp, &flag, &quote);
-	while (flag == 1)
+	while (flag == 1 || (ft_handle_usr_inp_end(*usr_inp) < 0))
 	{
 		status = ft_recurs_cmd_inp(usr_inp);
 		if (status < 0)
